@@ -5,6 +5,26 @@ from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Embedding
 
+# generate a sequence from the model
+def generate_seq(model, tokenizer, seed_text, n_words):
+	in_text, result = seed_text, seed_text
+	# generate a fixed number of words
+	for _ in range(n_words):
+		# encode the text as integer
+		encoded = tokenizer.texts_to_sequences([in_text])[0]
+		encoded = np.asarray(encoded)
+		# predict a word in the vocabulary
+		yhat = model.predict_classes(encoded, verbose=0)
+		# map predicted word index to word
+		out_word = ''
+		for word, index in tokenizer.word_index.items():
+			if index == yhat:
+				out_word = word
+				break
+		# append to input
+		in_text, result = out_word, result + ' ' + out_word
+	return result
+
 text = """Jack and Jill went up the hill\n
 		To fetch a pail of water\n
 		Jack fell down and broke his crown\n
@@ -48,7 +68,7 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 model.fit(x, y, epochs=500, verbose=2)
 
 # evaluate
-in_text = 'Jack'
+in_text = 'and'
 print(in_text)
 
 encoded = tokenizer.texts_to_sequences([in_text])[0]
@@ -59,3 +79,5 @@ print(yhat)
 for word, index in tokenizer.word_index.items():
 	if index == yhat:
 		print(word)
+
+print(generate_seq(model, tokenizer, 'Jack', 6))
