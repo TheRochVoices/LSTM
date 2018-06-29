@@ -1,0 +1,61 @@
+from keras.preprocessing.text import Tokenizer
+from keras.utils import to_categorical
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import LSTM
+from keras.layers import Embedding
+
+text = """Jack and Jill went up the hill\n
+		To fetch a pail of water\n
+		Jack fell down and broke his crown\n
+		And Jill came tumbling after\n """
+		
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts([text])
+encoded = tokenizer.texts_to_sequences([text])[0]
+print(encoded)
+
+# determine the vocabulary size
+vocab_size = len(tokenizer.word_index) + 1
+print('Vocabulary Size: %d' % vocab_size)
+
+sequences = []
+
+for i in range(1, len(encoded)):
+	sequence = encoded[i-1:i+1]
+	print(sequence)
+	sequences.append(sequence)
+print('Total Sequences: %d' % len(sequences))
+
+import numpy as np
+
+sequences = np.asarray(sequences)
+x, y = sequences[:, 0], sequences[:, 1]
+
+y = to_categorical(y, num_classes=vocab_size)
+print(y)
+
+# define model
+model = Sequential()
+model.add(Embedding(vocab_size, 10, input_length=1))
+model.add(LSTM(50))
+model.add(Dense(vocab_size, activation='softmax'))
+print(model.summary())
+
+# compile network
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+# fit network
+model.fit(x, y, epochs=500, verbose=2)
+
+# evaluate
+in_text = 'Jack'
+print(in_text)
+
+encoded = tokenizer.texts_to_sequences([in_text])[0]
+encoded = np.asarray(encoded)
+yhat = model.predict_classes(encoded, verbose=1)
+print("********")
+print(yhat)
+for word, index in tokenizer.word_index.items():
+	if index == yhat:
+		print(word)
